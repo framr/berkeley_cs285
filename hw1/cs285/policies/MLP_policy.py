@@ -80,8 +80,9 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         else:
             observation = obs[None]
 
-        # TODO return the action that the policy prescribes
-        raise NotImplementedError
+        observation = torch.from_numpy(observation).to(torch.float32).to(ptu.device)
+        action = self.forward(observation).detach().cpu().numpy()
+        return action
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
@@ -93,7 +94,10 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor) -> Any:
-        raise NotImplementedError
+        if self.discrete:
+            return distributions.Categorical(logits=self.logits_na(observation))
+        else:
+            return distributions.Normal(self.mean_net(observation), self.logstd.exp()[None])
 
 
 #####################################################
@@ -109,7 +113,9 @@ class MLPPolicySL(MLPPolicy):
             adv_n=None, acs_labels_na=None, qvals=None
     ):
         # TODO: update the policy and return the loss
-        loss = TODO
+        # WTF, why self.loss = MSELoss??? for discrete too???
+
+
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),
