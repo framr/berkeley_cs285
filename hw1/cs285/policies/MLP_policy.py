@@ -81,7 +81,9 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             observation = obs[None]
 
         observation = torch.from_numpy(observation).to(torch.float32).to(ptu.device)
-        action = self.forward(observation).detach().cpu().numpy()
+        # XXX?
+        #action = self.forward(observation).detach().cpu().numpy()
+        action = ptu.to_numpy(self(observation).sample())
         return action
 
     # update/train this policy
@@ -107,15 +109,17 @@ class MLPPolicySL(MLPPolicy):
     def __init__(self, ac_dim, ob_dim, n_layers, size, **kwargs):
         super().__init__(ac_dim, ob_dim, n_layers, size, **kwargs)
         self.loss = nn.MSELoss()
-
-    def update(
-            self, observations, actions,
-            adv_n=None, acs_labels_na=None, qvals=None
-    ):
-        # TODO: update the policy and return the loss
         # WTF, why self.loss = MSELoss??? for discrete too???
 
-
+    def update(
+            self, observations: np.ndarray, actions: np.ndarrray,
+            adv_n=None, acs_labels_na=None, qvals=None
+    ):
+        self.optimizer.zero_grad()
+        obs = torch.tensor(observation, dtype=torch.float32, device=ptu.device)
+        distr = self(obs)
+        loss = distr.log_prob(actions).mean()
+        self.optimizer.step()
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),
