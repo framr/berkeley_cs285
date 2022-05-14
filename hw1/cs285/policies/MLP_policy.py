@@ -116,7 +116,7 @@ class MLPPolicySL(MLPPolicy):
             adv_n=None, acs_labels_na=None, qvals=None
     ):
         self.optimizer.zero_grad()
-        obs = torch.tensor(observation, dtype=torch.float32, device=ptu.device)
+        obs = torch.tensor(observations, dtype=torch.float32, device=ptu.device)
         distr = self(obs)
         loss = distr.log_prob(actions).mean()
         self.optimizer.step()
