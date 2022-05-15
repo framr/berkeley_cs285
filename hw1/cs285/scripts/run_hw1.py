@@ -28,7 +28,7 @@ class BC_Trainer(object):
         ## RL TRAINER
         ################
 
-        self.rl_trainer = RL_Trainer(self.params) ## HW1: you will modify this
+        self.rl_trainer = RL_Trainer(self.params)
 
         #######################
         ## LOAD EXPERT POLICY

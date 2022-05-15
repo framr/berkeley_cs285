@@ -1,6 +1,8 @@
-from collections import OrderedDict
+#from collections import OrderedDict
+from gc import collect
 import numpy as np
 import time
+import pickle
 
 import gym
 import torch
@@ -108,7 +110,7 @@ class RL_Trainer(object):
                 initial_expertdata,
                 collect_policy,
                 self.params['batch_size']
-            )  # HW1: implement this function below
+            )
             paths, envsteps_this_batch, train_video_paths = training_returns
             self.total_envsteps += envsteps_this_batch
 
@@ -161,21 +163,30 @@ class RL_Trainer(object):
                 # ``` return loaded_paths, 0, None ```
 
                 # (2) collect `self.params['batch_size']` transitions
+        if itr == 0:
+            print("\nLoading initial expert data")
+            with open(load_initial_expertdata, 'rb') as f:
+                paths = pickle.load(f)
+                return paths, 0, None
 
         # TODO collect `batch_size` samples to be used for training
         # HINT1: use sample_trajectories from utils
         # HINT2: you want each of these collected rollouts to be of length self.params['ep_len']
         print("\nCollecting data to be used for training...")
-        paths, envsteps_this_batch = TODO
+        paths, envsteps_this_batch = sample_trajectories(
+            env=self.env,
+            policy=collect_policy,
+            min_timesteps_per_batch=self.params["ep_len"] * batch_size,
+            max_path_length=self.params["ep_len"],
+            render=False,
+            render_mode=('rgb_array'))
 
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
         # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
         train_video_paths = None
         if self.log_video:
             print('\nCollecting train rollouts to be used for saving videos...')
-            ## TODO look in utils and implement sample_n_trajectories
             train_video_paths = utils.sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)
-
         return paths, envsteps_this_batch, train_video_paths
 
 
