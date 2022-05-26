@@ -18,14 +18,14 @@ _str_to_activation = {
 
 
 class MLPNet(nn.Module):
-    def __init__(self) -> None:
-        super().__init__(self, input_size, output_size, n_layers, size, activation_fn, output_activation_fn)
+    def __init__(self, input_size, output_size, n_layers, size, activation_fn, output_activation_fn) -> None:
+        super().__init__()
         self.layers = [nn.Linear(input_size, size), activation_fn]
         for _ in range(n_layers - 1):
             self.layers.append(nn.Linear(size, size))
             self.layers.append(activation_fn)
         self.layers.append(nn.Linear(size, output_size))
-        self.layers.append(output_activation)
+        self.layers.append(output_activation_fn)
 
     def forward(x):
         for l in self.layers:
