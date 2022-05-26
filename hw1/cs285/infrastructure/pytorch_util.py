@@ -61,7 +61,6 @@ def build_mlp(
     if isinstance(output_activation, str):
         output_activation = _str_to_activation[output_activation]
 
-
     return MLPNet(input_size, output_size, n_layers, size, activation, output_activation)
 
 device = None

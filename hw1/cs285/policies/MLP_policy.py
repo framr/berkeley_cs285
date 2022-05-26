@@ -112,7 +112,7 @@ class MLPPolicySL(MLPPolicy):
         # WTF, why self.loss = MSELoss??? for discrete too???
 
     def update(
-            self, observations: np.ndarray, actions: np.ndarrray,
+            self, observations: np.ndarray, actions: np.ndarray,
             adv_n=None, acs_labels_na=None, qvals=None
     ):
         self.optimizer.zero_grad()
