@@ -27,7 +27,7 @@ class MLPNet(nn.Module):
         self.layers.append(nn.Linear(size, output_size))
         self.layers.append(output_activation_fn)
 
-    def forward(x):
+    def forward(self, x):
         for l in self.layers:
             x = l(x)
         return x

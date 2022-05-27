@@ -166,6 +166,9 @@ class RL_Trainer(object):
             print("\nLoading initial expert data")
             with open(load_initial_expertdata, 'rb') as f:
                 paths = pickle.load(f)
+                print("loaded paths ", len(paths))
+                print("len of path in observations", len(paths[0]["observation"]))
+                print("dimensionality of each observation ", paths[0]["observation"][0].shape)
                 return paths, 0, None
 
         # collect `batch_size` samples to be used for training
@@ -198,6 +201,9 @@ class RL_Trainer(object):
             # use the sampled data to train an agent
             # HINT: use the agent's train function
             # HINT: keep the agent's training log for debugging
+            print("replay buf length ", len(self.agent.replay_buffer))
+            print("sampled batch size {} observations and actions shapes ->".format(self.params["train_batch_size"]),
+                ob_batch.shape, ac_batch.shape)
             train_log = self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
             all_logs.append(train_log)
         return all_logs

@@ -18,7 +18,7 @@ class ReplayBuffer(object):
         self.terminals = None
 
     def __len__(self):
-        if self.obs:
+        if self.obs is not None:
             return self.obs.shape[0]
         else:
             return 0
@@ -72,11 +72,17 @@ class ReplayBuffer(object):
                 == self.terminals.shape[0]
         )
         indices = np.random.permutation(len(self.obs))[:batch_size]
-        obs = np.take(self.obs, indices)
-        acs = np.take(self.acs, indices)
-        rews = np.take(self.rews, indices)
-        next_obs = np.take(self.next_obs, indices)
-        terminals = np.take(self.terminals, indices)
+        #obs = np.take(self.obs, indices)
+        #acs = np.take(self.acs, indices)
+        #rews = np.take(self.rews, indices)
+        #next_obs = np.take(self.next_obs, indices)
+        #terminals = np.take(self.terminals, indices)
+
+        obs = self.obs[indices]
+        acs = self.acs[indices]
+        rews = self.rews[indices]
+        next_obs = self.next_obs[indices]
+        terminals = self.terminals[indices]
 
         ## return batch_size number of random entries from each of the 5 component arrays above
         ## HINT 1: use np.random.permutation to sample random indices

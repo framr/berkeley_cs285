@@ -99,7 +99,10 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         if self.discrete:
             return distributions.Categorical(logits=self.logits_na(observation))
         else:
-            return distributions.Normal(self.mean_net(observation), self.logstd.exp()[None])
+            print(observation.shape, observation)
+            mm = self.mean_net(observation)
+            ss = self.logstd.exp()[None]
+            return distributions.Normal(mm, ss)
 
 
 #####################################################
