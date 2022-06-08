@@ -61,7 +61,7 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             self.logstd = nn.Parameter(
                 torch.zeros(self.ac_dim, dtype=torch.float32, device=ptu.device)
             )
-            self.logstd.to(ptu.device)
+            #self.logstd.to(ptu.device)
             self.optimizer = optim.Adam(
                 itertools.chain([self.logstd], self.mean_net.parameters()),
                 self.learning_rate
@@ -99,7 +99,8 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         if self.discrete:
             return distributions.Categorical(logits=self.logits_na(observation))
         else:
-            print(observation.shape, observation)
+            #print(observation.shape)
+            #print([dd.is_cuda for dd in next(self.mean_net.parameters())])
             mm = self.mean_net(observation)
             ss = self.logstd.exp()[None]
             return distributions.Normal(mm, ss)
@@ -120,8 +121,15 @@ class MLPPolicySL(MLPPolicy):
     ):
         self.optimizer.zero_grad()
         obs = torch.tensor(observations, dtype=torch.float32, device=ptu.device)
+        #print(observations.shape, actions.shape)
+        #print(actions, self.discrete)
+        #acts = torch.tensor(np.zeros((1,1)), dtype=torch.float32, device=ptu.device)
+        acts = torch.tensor(actions, dtype=torch.int if self.discrete else torch.float32, device=ptu.device)
         distr = self(obs)
-        loss = distr.log_prob(actions).mean()
+        distr.sample()
+
+        loss = -distr.log_prob(acts).mean()
+        loss.backward()
         self.optimizer.step()
         return {
             # You can add extra logging information here, but keep this line
