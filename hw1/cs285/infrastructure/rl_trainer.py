@@ -15,7 +15,7 @@ from cs285.infrastructure import utils
 # how many rollouts to save as videos to tensorboard
 MAX_NVIDEO = 2
 MAX_VIDEO_LEN = 40  # we overwrite this in the code below
-
+TRAIN_LOSS_PRINT_FREQ = 50
 
 class RL_Trainer(object):
 
@@ -28,7 +28,7 @@ class RL_Trainer(object):
         # Get params, create logger, create TF session
         self.params = params
         self.logger = Logger(self.params['logdir'])
-
+        print(self.params['logdir'])
         # Set random seeds
         seed = self.params['seed']
         np.random.seed(seed)
@@ -98,6 +98,7 @@ class RL_Trainer(object):
                 self.log_video = True
             else:
                 self.log_video = False
+            print("log_video = ", self.log_video)
 
             # decide if metrics should be logged
             if itr % self.params['scalar_log_freq'] == 0:
@@ -167,7 +168,7 @@ class RL_Trainer(object):
             print("\nLoading initial expert data")
             with open(load_initial_expertdata, 'rb') as f:
                 paths = pickle.load(f)
-                #print("loaded paths ", len(paths))
+                #print("len of loaded paths ", len(paths))
                 #print("len of path in observations", len(paths[0]["observation"]))
                 #print("dimensionality of each observation ", paths[0]["observation"][0].shape)
                 return paths, 0, None
@@ -176,10 +177,10 @@ class RL_Trainer(object):
         # HINT1: use sample_trajectories from utils
         # HINT2: you want each of these collected rollouts to be of length self.params['ep_len']
         print("\nCollecting data to be used for training...")
-        paths, envsteps_this_batch = sample_trajectories(
+        paths, envsteps_this_batch = utils.sample_trajectories(
             env=self.env,
             policy=collect_policy,
-            min_timesteps_per_batch=self.params["ep_len"] * batch_size,
+            min_timesteps_per_batch=self.batch_size,
             max_path_length=self.params["ep_len"],
             render=False,
             render_mode=('rgb_array'))
@@ -188,6 +189,7 @@ class RL_Trainer(object):
         # collect more rollouts with the same policy, to be saved as videos in tensorboard
         # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
         train_video_paths = None
+        #print(self.log_video)
         if self.log_video:
             print('\nCollecting train rollouts to be used for saving videos...')
             train_video_paths = utils.sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)
@@ -197,16 +199,18 @@ class RL_Trainer(object):
     def train_agent(self):
         print('\nTraining agent using sampled data from replay buffer...')
         all_logs = []
+        print("\nIterations to do = ", self.params['num_agent_train_steps_per_iter'])
         for train_step in range(self.params['num_agent_train_steps_per_iter']):
             ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params["train_batch_size"])
             # use the sampled data to train an agent
             # HINT: use the agent's train function
             # HINT: keep the agent's training log for debugging
-            #print("replay buf length ", len(self.agent.replay_buffer))
-            #print("sampled batch size {} observations and actions shapes ->".format(self.params["train_batch_size"]),
-            #    ob_batch.shape, ac_batch.shape)
+            #print("This is what goes into trainng")
+            #print(ob_batch.shape, ac_batch.shape)
             train_log = self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
             all_logs.append(train_log)
+            if train_step % TRAIN_LOSS_PRINT_FREQ == 0:
+                print(train_log)
         return all_logs
 
     def do_relabel_with_expert(self, expert_policy, paths):
@@ -225,8 +229,12 @@ class RL_Trainer(object):
 
         # collect eval trajectories, for logging
         print("\nCollecting data for eval...")
+        # XXX WTF??????? self.params['eval_batch_size'] * self.params['ep_len']  ???????
+        #timesteps = self.params['eval_batch_size'] * self.params['ep_len']
+        timesteps = self.params['eval_batch_size']
+        print("Timesteps to collect", timesteps)
         eval_paths, eval_envsteps_this_batch = utils.sample_trajectories(
-            self.env, eval_policy, self.params['eval_batch_size'], self.params['ep_len'])
+            self.env, eval_policy, timesteps, self.params['ep_len'])
 
         #print(self.params['eval_batch_size'], self.params['ep_len'])
         #print(eval_paths)
@@ -239,7 +247,7 @@ class RL_Trainer(object):
             print('\nSaving train rollouts as videos...')
             self.logger.log_paths_as_videos(train_video_paths, itr, fps=self.fps, max_videos_to_save=MAX_NVIDEO,
                                             video_title='train_rollouts')
-            self.logger.log_paths_as_videos(eval_video_paths, itr, fps=self.fps,max_videos_to_save=MAX_NVIDEO,
+            self.logger.log_paths_as_videos(eval_video_paths, itr, fps=self.fps, max_videos_to_save=MAX_NVIDEO,
                                              video_title='eval_rollouts')
 
         # save eval metrics
@@ -250,7 +258,7 @@ class RL_Trainer(object):
             train_returns = [path["reward"].sum() for path in paths]
             eval_returns = [eval_path["reward"].sum() for eval_path in eval_paths]
 
-            print(eval_returns)
+            #print(eval_returns)
             # episode lengths, for logging
             train_ep_lens = [len(path["reward"]) for path in paths]
             eval_ep_lens = [len(eval_path["reward"]) for eval_path in eval_paths]
