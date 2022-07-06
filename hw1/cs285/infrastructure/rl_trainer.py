@@ -180,7 +180,7 @@ class RL_Trainer(object):
         paths, envsteps_this_batch = utils.sample_trajectories(
             env=self.env,
             policy=collect_policy,
-            min_timesteps_per_batch=self.batch_size,
+            min_timesteps_per_batch=batch_size,
             max_path_length=self.params["ep_len"],
             render=False,
             render_mode=('rgb_array'))
@@ -209,8 +209,8 @@ class RL_Trainer(object):
             #print(ob_batch.shape, ac_batch.shape)
             train_log = self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
             all_logs.append(train_log)
-            if train_step % TRAIN_LOSS_PRINT_FREQ == 0:
-                print(train_log)
+            #if train_step % TRAIN_LOSS_PRINT_FREQ == 0:
+            #    print(train_log)
         return all_logs
 
     def do_relabel_with_expert(self, expert_policy, paths):
@@ -229,15 +229,11 @@ class RL_Trainer(object):
 
         # collect eval trajectories, for logging
         print("\nCollecting data for eval...")
-        # XXX WTF??????? self.params['eval_batch_size'] * self.params['ep_len']  ???????
-        #timesteps = self.params['eval_batch_size'] * self.params['ep_len']
         timesteps = self.params['eval_batch_size']
         print("Timesteps to collect", timesteps)
         eval_paths, eval_envsteps_this_batch = utils.sample_trajectories(
             self.env, eval_policy, timesteps, self.params['ep_len'])
 
-        #print(self.params['eval_batch_size'], self.params['ep_len'])
-        #print(eval_paths)
         # save eval rollouts as videos in tensorboard event file
         if self.log_video and train_video_paths != None:
             print('\nCollecting video rollouts eval')

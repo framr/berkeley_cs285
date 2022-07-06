@@ -20,7 +20,7 @@ _str_to_activation = {
 class MLPNet(nn.Module):
     def __init__(self, input_size, output_size, n_layers, size, activation_fn, output_activation_fn) -> None:
         super().__init__()
-        self.layers = [nn.Linear(input_size, size), activation_fn]
+        self.layers = nn.ModuleList([nn.Linear(input_size, size), activation_fn])
         for _ in range(n_layers - 1):
             self.layers.append(nn.Linear(size, size))
             self.layers.append(activation_fn)
